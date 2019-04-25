@@ -201,7 +201,7 @@ func writeWorktimes(filename string, lines *[]Day) error {
 			return err
 		}
 
-		fmt.Fprint(fileExport, "Start/End;Duration day;Duration Week;Comment;Overtime\n")
+		fmt.Fprint(fileExport, "Start/End;Duration day;Duration Week;Comment;Overtime;Sum Overtime\n")
 		fmt.Fprint(fileExport, "\n")
 
 		defer fileExport.Close()
@@ -274,6 +274,7 @@ func writeWorktimes(filename string, lines *[]Day) error {
 					worktime = 0
 
 					sumGleittag += time.Duration(8) * time.Hour
+					sumOvertime -= time.Duration(8) * time.Hour
 				}
 
 				day.start = common.TruncateTime(loopDay, common.Day)
@@ -329,7 +330,7 @@ func writeWorktimes(filename string, lines *[]Day) error {
 		worktimeString := formatDuration(worktime)
 
 		line0 := fmt.Sprintf("%s\n", strings.Join([]string{day.start.Format(string(mask)), "", "", comment, ""}, ";"))
-		line1 := fmt.Sprintf("%s\n", strings.Join([]string{day.end.Format(string(mask)), worktimeString, sumOfWeekString, "", overtimeString}, ";"))
+		line1 := fmt.Sprintf("%s\n", strings.Join([]string{day.end.Format(string(mask)), worktimeString, sumOfWeekString, "", overtimeString, formatDuration(sumOvertime)}, ";"))
 
 		if !service.Interactive() {
 			fmt.Fprint(fileWorktime, line0)
@@ -369,8 +370,6 @@ func writeWorktimes(filename string, lines *[]Day) error {
 		fmt.Printf("Average worktime        : %v\n", formatDuration(averageWorktime))
 		fmt.Printf("Sum worktime            : %v\n", formatDuration(sumWorktime))
 		fmt.Printf("Sum overtime            : %v\n", formatDuration(sumOvertime))
-		fmt.Printf("Sum #Gleittag           : %v\n", formatDuration(sumGleittag))
-		fmt.Printf("Sum overtime-#Gleittag  : %v\n", formatDuration(sumOvertime-sumGleittag))
 	}
 
 	return err
@@ -447,6 +446,6 @@ func tick() error {
 func main() {
 	defer common.Cleanup()
 
-	common.New(&common.App{"worktime", "1.0.27", "2017", "tracks your working times", "mpetavy", common.APACHE, "https://github.com/mpetavy/worktime", true, nil, nil,nil, tick, time.Duration(60) * time.Second}, []string{"f"})
+	common.New(&common.App{"worktime", "1.0.27", "2017", "tracks your working times", "mpetavy", common.APACHE, "https://github.com/mpetavy/worktime", true, nil, nil, nil, tick, time.Duration(60) * time.Second}, []string{"f"})
 	common.Run()
 }
