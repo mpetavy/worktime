@@ -209,7 +209,6 @@ func writeWorktimes(filename string, lines *[]Day) error {
 
 	var sumWorktime time.Duration
 	var sumOvertime time.Duration
-	var sumGleittag time.Duration
 	var sumWorkDays int64
 	var sumNonWorkDays int64
 	var sumOfWeek time.Duration
@@ -226,15 +225,17 @@ func writeWorktimes(filename string, lines *[]Day) error {
 
 	c := 0
 
-	//d, err := time.Parse(common.DateMask, "27.03.2018")
-	//if err != nil { return err }
-
 	for loopDay := start; end.Sub(loopDay) >= 0; {
 
-		//if !loopDay.Before(d) {
-		//	fmt.Printf("stop %s\n" + loopDay.Format(common.DateMask))
-		//}
-		//
+		// d, err := time.Parse(common.DateMask, "25.10.2017")
+		// if err != nil {
+		// 	return err
+		// }
+
+		// if !loopDay.Before(d) {
+		// 	fmt.Printf("stop %s\n" + loopDay.Format(common.DateMask))
+		// }
+
 		day, found := findDay(lines, loopDay)
 
 		if !found {
@@ -243,43 +244,47 @@ func writeWorktimes(filename string, lines *[]Day) error {
 		}
 
 		comment := getFeiertag(loopDay)
+
 		isFeiertag := len(comment) > 0
-
 		isWeekend := loopDay.Weekday() == time.Saturday || loopDay.Weekday() == time.Sunday
-		isBusy := len(day.comment) > 0
-		isGleittag := isBusy && day.comment == Gleittag
+		isCommented := len(day.comment) > 0
+		isGleittag := isCommented && day.comment == Gleittag
 
-		if len(comment) == 0 && isBusy {
+		worktime := time.Duration(0)
+		overtime := time.Duration(0)
+
+		if isWeekend || isFeiertag || isGleittag || isCommented {
+			day.start = common.TruncateTime(loopDay, common.Day)
+			day.end = common.TruncateTime(loopDay, common.Day)
+
+			if isGleittag {
+				overtime = -time.Duration(8) * time.Hour
+			}
+
+			sumNonWorkDays++
+		} else {
+			worktime = day.end.Sub(day.start)
+			if worktime > time.Duration(6)*time.Hour {
+				worktime -= time.Duration(30) * time.Minute
+			}
+
+			overtime = worktime - time.Duration(8)*time.Hour
+
+			sumWorkDays++
+		}
+
+		sumWorktime += worktime
+		sumOvertime += overtime
+
+		overtimeString := formatDuration(overtime)
+		worktimeString := formatDuration(worktime)
+
+		if len(comment) == 0 && isCommented {
 			comment = day.comment
 		}
 
-		if len(comment) == 0 && !isFeiertag && !isWeekend && !isBusy && !found {
+		if len(comment) == 0 && !isFeiertag && !isWeekend && !isCommented && worktime == 0 {
 			comment = "?"
-		}
-
-		worktime := day.end.Sub(day.start)
-		if worktime > time.Duration(6)*time.Hour {
-			worktime -= time.Duration(30) * time.Minute
-		}
-
-		if isWeekend {
-			worktime = 0
-			day.start = common.TruncateTime(loopDay, common.Day)
-			day.end = common.TruncateTime(loopDay, common.Day)
-		} else {
-			if isFeiertag || isBusy || isGleittag {
-				worktime = time.Duration(8) * time.Hour
-
-				if isGleittag {
-					worktime = 0
-
-					sumGleittag += time.Duration(8) * time.Hour
-					sumOvertime -= time.Duration(8) * time.Hour
-				}
-
-				day.start = common.TruncateTime(loopDay, common.Day)
-				day.end = common.TruncateTime(loopDay, common.Day)
-			}
 		}
 
 		if day.start.Weekday() == time.Monday {
@@ -287,13 +292,6 @@ func writeWorktimes(filename string, lines *[]Day) error {
 			sumOfWeek = worktime
 		} else {
 			sumOfWeek += worktime
-		}
-
-		if !isWeekend && !isFeiertag && worktime > 0 {
-			sumWorktime += worktime
-			sumWorkDays += 1
-		} else {
-			sumNonWorkDays += 1
 		}
 
 		if day.start.Weekday() == time.Friday {
@@ -304,14 +302,6 @@ func writeWorktimes(filename string, lines *[]Day) error {
 			}
 		} else {
 			sumOfWeekString = ""
-		}
-
-		overtimeString := ""
-
-		if worktime > time.Duration(8)*time.Hour {
-			overtime := worktime - time.Duration(8)*time.Hour
-			sumOvertime += overtime
-			overtimeString = formatDuration(overtime)
 		}
 
 		if strings.HasPrefix(comment, "#") {
@@ -326,8 +316,6 @@ func writeWorktimes(filename string, lines *[]Day) error {
 
 			commentDay[s] = v
 		}
-
-		worktimeString := formatDuration(worktime)
 
 		line0 := fmt.Sprintf("%s\n", strings.Join([]string{day.start.Format(string(mask)), "", "", comment, ""}, ";"))
 		line1 := fmt.Sprintf("%s\n", strings.Join([]string{day.end.Format(string(mask)), worktimeString, sumOfWeekString, "", overtimeString, formatDuration(sumOvertime)}, ";"))
