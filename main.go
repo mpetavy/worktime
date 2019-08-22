@@ -434,6 +434,6 @@ func tick() error {
 func main() {
 	defer common.Cleanup()
 
-	common.New(&common.App{"worktime", "1.0.27", "2017", "tracks your working times", "mpetavy", common.APACHE, "https://github.com/mpetavy/worktime", true, nil, nil, nil, tick, time.Duration(60) * time.Second}, []string{"f"})
+	common.New(&common.App{"worktime", "1.0.27", "2017", "tracks your working times", "mpetavy", common.APACHE, "https://github.com/mpetavy/worktime", true, nil, nil, tick, time.Duration(60) * time.Second}, []string{"f"})
 	common.Run()
 }
