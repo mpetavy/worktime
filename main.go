@@ -39,6 +39,8 @@ type Day struct {
 }
 
 func init() {
+	common.Init("worktime", "1.0.27", "2017", "tracks your working times", "mpetavy", common.APACHE, "https://github.com/mpetavy/worktime", true, nil, nil, tick, time.Duration(60)*time.Second)
+
 	minutes = flag.Bool("m", false, "show durations in minutes")
 
 	fn := ""
@@ -434,6 +436,5 @@ func tick() error {
 func main() {
 	defer common.Cleanup()
 
-	common.New(&common.App{"worktime", "1.0.27", "2017", "tracks your working times", "mpetavy", common.APACHE, "https://github.com/mpetavy/worktime", true, nil, nil, tick, time.Duration(60) * time.Second}, []string{"f"})
-	common.Run()
+	common.Run([]string{"f"})
 }
