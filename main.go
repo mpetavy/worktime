@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/user"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -45,8 +46,13 @@ func init() {
 
 	fn := ""
 
+	user, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+
 	if service.Interactive() {
-		fn = fmt.Sprintf("%s%s%s", fmt.Sprintf("%s%s%s%s%s", *common.UserHomeDir, string(os.PathSeparator), "Documents", string(os.PathSeparator), "worktime"), string(os.PathSeparator), "worktime.csv")
+		fn = fmt.Sprintf("%s%s%s", fmt.Sprintf("%s%s%s%s%s", user.HomeDir, string(os.PathSeparator), "Documents", string(os.PathSeparator), "worktime"), string(os.PathSeparator), "worktime.csv")
 	}
 
 	filename = flag.String("f", fn, "filename for worktime.csv")
