@@ -40,7 +40,7 @@ type Day struct {
 }
 
 func init() {
-	common.Init("worktime", "1.0.27", "2017", "tracks your working times", "mpetavy", common.APACHE, "https://github.com/mpetavy/worktime", true, nil, nil, tick, time.Duration(60)*time.Second)
+	common.Init("1.0.27", "2017", "tracks your working times", "mpetavy", common.APACHE, true, nil, nil, tick, time.Duration(60)*time.Second)
 
 	minutes = flag.Bool("m", false, "show durations in minutes")
 
