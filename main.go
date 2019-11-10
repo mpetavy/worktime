@@ -189,7 +189,7 @@ func writeWorktimes(filename string, lines *[]Day) error {
 
 		b, err := common.FileExists(dir)
 		if !b {
-			err := os.MkdirAll(dir, common.DirFileMode)
+			err := os.MkdirAll(dir, common.DefaultDirMode)
 
 			if err != nil {
 				return err
