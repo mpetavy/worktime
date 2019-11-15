@@ -184,7 +184,7 @@ func writeWorktimes(filename string, lines *[]Day) error {
 	var fileExport *os.File
 	var err error
 
-	if !service.Interactive() {
+	if common.IsRunningAsService() {
 		dir := filepath.Dir(filename)
 
 		b, err := common.FileExists(dir)
@@ -328,7 +328,7 @@ func writeWorktimes(filename string, lines *[]Day) error {
 		line0 := fmt.Sprintf("%s\n", strings.Join([]string{day.start.Format(string(mask)), "", "", comment, ""}, ";"))
 		line1 := fmt.Sprintf("%s\n", strings.Join([]string{day.end.Format(string(mask)), worktimeString, sumOfWeekString, "", overtimeString, formatDuration(sumOvertime)}, ";"))
 
-		if !service.Interactive() {
+		if common.IsRunningAsService() {
 			fmt.Fprint(fileWorktime, line0)
 			fmt.Fprint(fileWorktime, line1)
 		}
@@ -346,7 +346,7 @@ func writeWorktimes(filename string, lines *[]Day) error {
 		loopDay = loopDay.AddDate(0, 0, 1)
 	}
 
-	if service.Interactive() {
+	if !common.IsRunningAsService() {
 		averageWorktime := time.Duration(float64(sumWorktime) / float64(sumWorkDays))
 
 		if sumWorkDays < 2 {
@@ -388,32 +388,32 @@ func tick() error {
 	var end time.Time
 	var lines []Day
 
-	fmt.Printf("worktime file: %s\n\n", *filename)
-
-	b, err := common.FileExists(*filename)
-	if err != nil {
-		return err
-	}
-
-	if b {
-		yesterday := time.Now().Add(-time.Hour * 24)
-
-		backupFilename := filepath.Dir(*filename) + string(filepath.Separator) + common.FileNamePart(*filename) + "-" + yesterday.Format(common.DateMaskFilename) + common.FileNameExt(*filename)
-
-		b, err := common.FileExists(backupFilename)
+	if common.IsRunningAsService() {
+		b, err := common.FileExists(*filename)
 		if err != nil {
 			return err
 		}
-		if !b {
-			err := common.FileCopy(*filename, backupFilename)
+
+		if b {
+			yesterday := time.Now().Add(-time.Hour * 24)
+
+			backupFilename := filepath.Dir(*filename) + string(filepath.Separator) + common.FileNamePart(*filename) + "-" + yesterday.Format(common.DateMaskFilename) + common.FileNameExt(*filename)
+
+			b, err := common.FileExists(backupFilename)
 			if err != nil {
 				return err
 			}
-		}
+			if !b {
+				err := common.FileCopy(*filename, backupFilename)
+				if err != nil {
+					return err
+				}
+			}
 
-		err = readWorktimes(*filename, &start, &end, &lines)
-		if err != nil {
-			return err
+			err = readWorktimes(*filename, &start, &end, &lines)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
