@@ -46,13 +46,13 @@ func init() {
 
 	fn := ""
 
-	user, err := user.Current()
+	usr, err := user.Current()
 	if err != nil {
 		panic(err)
 	}
 
 	if service.Interactive() {
-		fn = fmt.Sprintf("%s%s%s", fmt.Sprintf("%s%s%s%s%s", user.HomeDir, string(os.PathSeparator), "Documents", string(os.PathSeparator), "worktime"), string(os.PathSeparator), "worktime.csv")
+		fn = fmt.Sprintf("%s%s%s", fmt.Sprintf("%s%s%s%s%s", usr.HomeDir, string(os.PathSeparator), "Documents", string(os.PathSeparator), "worktime"), string(os.PathSeparator), "worktime.csv")
 	}
 
 	filename = flag.String("f", fn, "filename for worktime.csv")
@@ -388,13 +388,13 @@ func tick() error {
 	var end time.Time
 	var lines []Day
 
-	if common.IsRunningAsService() {
-		b, err := common.FileExists(*filename)
-		if err != nil {
-			return err
-		}
+	b, err := common.FileExists(*filename)
+	if err != nil {
+		return err
+	}
 
-		if b {
+	if b {
+		if common.IsRunningAsService() {
 			yesterday := time.Now().Add(-time.Hour * 24)
 
 			backupFilename := filepath.Dir(*filename) + string(filepath.Separator) + common.FileNamePart(*filename) + "-" + yesterday.Format(common.DateMaskFilename) + common.FileNameExt(*filename)
@@ -409,11 +409,11 @@ func tick() error {
 					return err
 				}
 			}
+		}
 
-			err = readWorktimes(*filename, &start, &end, &lines)
-			if err != nil {
-				return err
-			}
+		err = readWorktimes(*filename, &start, &end, &lines)
+		if err != nil {
+			return err
 		}
 	}
 
