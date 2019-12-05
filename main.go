@@ -217,6 +217,7 @@ func writeWorktimes(filename string, lines *[]Day) error {
 
 	var sumWorktime time.Duration
 	var sumOvertime time.Duration
+	var sumOvertime10h time.Duration
 	var sumWorkDays int64
 	var sumNonWorkDays int64
 	var sumOfWeek time.Duration
@@ -260,6 +261,7 @@ func writeWorktimes(filename string, lines *[]Day) error {
 
 		worktime := time.Duration(0)
 		overtime := time.Duration(0)
+		overtime10h := time.Duration(0)
 
 		if isWeekend || isFeiertag || isGleittag || isCommented {
 			day.start = common.TruncateTime(loopDay, common.Day)
@@ -267,6 +269,7 @@ func writeWorktimes(filename string, lines *[]Day) error {
 
 			if isGleittag {
 				overtime = -time.Duration(8) * time.Hour
+				overtime10h = -time.Duration(8) * time.Hour
 			}
 
 			sumNonWorkDays++
@@ -277,15 +280,21 @@ func writeWorktimes(filename string, lines *[]Day) error {
 			}
 
 			overtime = worktime - time.Duration(8)*time.Hour
+			if worktime > time.Hour*10 {
+				overtime10h = time.Hour * 2
+			} else {
+				overtime10h = worktime - time.Duration(8)*time.Hour
+			}
 
 			sumWorkDays++
 		}
 
 		sumWorktime += worktime
 		sumOvertime += overtime
+		sumOvertime10h += overtime10h
 
-		overtimeString := formatDuration(overtime)
 		worktimeString := formatDuration(worktime)
+		overtimeString := formatDuration(overtime)
 
 		if len(comment) == 0 && isCommented {
 			comment = day.comment
@@ -352,6 +361,7 @@ func writeWorktimes(filename string, lines *[]Day) error {
 		if sumWorkDays < 2 {
 			averageWorktime = 0
 			sumOvertime = 0
+			sumOvertime10h = 0
 		}
 
 		fmt.Println()
@@ -366,6 +376,17 @@ func writeWorktimes(filename string, lines *[]Day) error {
 		fmt.Printf("Average worktime        : %v\n", formatDuration(averageWorktime))
 		fmt.Printf("Sum worktime            : %v\n", formatDuration(sumWorktime))
 		fmt.Printf("Sum overtime            : %v\n", formatDuration(sumOvertime))
+		fmt.Printf("Sum overtime 10h limit  : %v\n", formatDuration(sumOvertime10h))
+
+		if fileExport != nil {
+			fmt.Fprint(fileWorktime, "\n")
+			fmt.Fprint(fileWorktime, "Count worktime days     : %v\n", sumWorkDays)
+			fmt.Fprint(fileWorktime, "Count non worktime days : %v\n", sumNonWorkDays)
+			fmt.Fprint(fileWorktime, "Average worktime        : %v\n", formatDuration(averageWorktime))
+			fmt.Fprint(fileWorktime, "Sum worktime            : %v\n", formatDuration(sumWorktime))
+			fmt.Fprint(fileWorktime, "Sum overtime            : %v\n", formatDuration(sumOvertime))
+			fmt.Fprint(fileWorktime, "Sum overtime 10h limit  : %v\n", formatDuration(sumOvertime10h))
+		}
 	}
 
 	return err
