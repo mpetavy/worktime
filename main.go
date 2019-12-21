@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kardianos/service"
 	"github.com/mpetavy/common"
 	"github.com/wlbr/feiertage"
 )
@@ -51,7 +50,7 @@ func init() {
 		panic(err)
 	}
 
-	if service.Interactive() {
+	if common.IsRunningInteractive() {
 		fn = fmt.Sprintf("%s%s%s", fmt.Sprintf("%s%s%s%s%s", usr.HomeDir, string(os.PathSeparator), "Documents", string(os.PathSeparator), "worktime"), string(os.PathSeparator), "worktime.csv")
 	}
 
