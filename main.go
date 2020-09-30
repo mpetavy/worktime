@@ -39,7 +39,7 @@ type Day struct {
 }
 
 func init() {
-	common.Init(true, "1.0.27", "2017", "tracks your working times", "mpetavy", fmt.Sprintf("https://github.com/mpetavy/%s", common.Title()), common.APACHE, nil, nil, tick, time.Duration(60)*time.Second)
+	common.Init(true, "1.0.27", "", "2017", "tracks your working times", "mpetavy", fmt.Sprintf("https://github.com/mpetavy/%s", common.Title()), common.APACHE, nil, nil, tick, time.Duration(60)*time.Second)
 
 	minutes = flag.Bool("m", false, "show durations in minutes")
 
@@ -74,7 +74,9 @@ func readWorktimes(filename string, start *time.Time, end *time.Time, lines *[]D
 		return err
 	}
 
-	defer file.Close()
+	defer func() {
+		common.DebugError(file.Close())
+	}()
 
 	r := csv.NewReader(file)
 
@@ -199,7 +201,9 @@ func writeWorktimes(filename string, lines *[]Day) error {
 		if err != nil {
 			return err
 		}
-		defer fileWorktime.Close()
+		defer func() {
+			common.DebugError(fileWorktime.Close())
+		}()
 	}
 
 	if len(*export) > 0 {
@@ -208,10 +212,14 @@ func writeWorktimes(filename string, lines *[]Day) error {
 			return err
 		}
 
-		fmt.Fprint(fileExport, "Start/End;Duration day;Duration Week;Comment;Overtime;Sum Overtime\n")
-		fmt.Fprint(fileExport, "\n")
+		_, err := fmt.Fprint(fileExport, "Start/End;Duration day;Duration Week;Comment;Overtime;Sum Overtime\n")
+		common.Error(err)
+		_, err = fmt.Fprint(fileExport, "\n")
+		common.Error(err)
 
-		defer fileExport.Close()
+		defer func() {
+			common.DebugError(fileExport.Close())
+		}()
 	}
 
 	var sumWorktime time.Duration
@@ -337,13 +345,17 @@ func writeWorktimes(filename string, lines *[]Day) error {
 		line1 := fmt.Sprintf("%s\n", strings.Join([]string{day.end.Format(string(mask)), worktimeString, sumOfWeekString, "", overtimeString, formatDuration(sumOvertime)}, ";"))
 
 		if common.IsRunningAsService() {
-			fmt.Fprint(fileWorktime, line0)
-			fmt.Fprint(fileWorktime, line1)
+			_, err := fmt.Fprint(fileWorktime, line0)
+			common.Error(err)
+			_, err = fmt.Fprint(fileWorktime, line1)
+			common.Error(err)
 		}
 
 		if fileExport != nil {
-			fmt.Fprint(fileExport, line0)
-			fmt.Fprint(fileExport, line1)
+			_, err := fmt.Fprint(fileExport, line0)
+			common.Error(err)
+			_, err = fmt.Fprint(fileExport, line1)
+			common.Error(err)
 		}
 
 		c++
@@ -378,13 +390,20 @@ func writeWorktimes(filename string, lines *[]Day) error {
 		fmt.Printf("Sum overtime 10h limit  : %v\n", formatDuration(sumOvertime10h))
 
 		if fileExport != nil {
-			fmt.Fprint(fileWorktime, "\n")
-			fmt.Fprint(fileWorktime, "Count worktime days     : %v\n", sumWorkDays)
-			fmt.Fprint(fileWorktime, "Count non worktime days : %v\n", sumNonWorkDays)
-			fmt.Fprint(fileWorktime, "Average worktime        : %v\n", formatDuration(averageWorktime))
-			fmt.Fprint(fileWorktime, "Sum worktime            : %v\n", formatDuration(sumWorktime))
-			fmt.Fprint(fileWorktime, "Sum overtime            : %v\n", formatDuration(sumOvertime))
-			fmt.Fprint(fileWorktime, "Sum overtime 10h limit  : %v\n", formatDuration(sumOvertime10h))
+			_, err := fmt.Fprint(fileWorktime, "\n")
+			common.Error(err)
+			_, err = fmt.Fprint(fileWorktime, "Count worktime days     : %v\n", sumWorkDays)
+			common.Error(err)
+			_, err = fmt.Fprint(fileWorktime, "Count non worktime days : %v\n", sumNonWorkDays)
+			common.Error(err)
+			_, err = fmt.Fprint(fileWorktime, "Average worktime        : %v\n", formatDuration(averageWorktime))
+			common.Error(err)
+			_, err = fmt.Fprint(fileWorktime, "Sum worktime            : %v\n", formatDuration(sumWorktime))
+			common.Error(err)
+			_, err = fmt.Fprint(fileWorktime, "Sum overtime            : %v\n", formatDuration(sumOvertime))
+			common.Error(err)
+			_, err = fmt.Fprint(fileWorktime, "Sum overtime 10h limit  : %v\n", formatDuration(sumOvertime10h))
+			common.Error(err)
 		}
 	}
 
