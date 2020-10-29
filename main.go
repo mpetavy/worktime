@@ -56,6 +56,12 @@ func init() {
 
 	filename = flag.String("f", fn, "filename for worktime.csv")
 	export = flag.String("e", "", "filename for export worktime.csv")
+
+	common.Events.NewFuncReceiver(common.EventFlagsParsed{}, func(event common.Event) {
+		if !common.IsRunningAsService() {
+			common.App().RunTime = 0
+		}
+	})
 }
 
 func findDay(lines *[]Day, date time.Time) (*Day, bool) {
