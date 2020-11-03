@@ -41,7 +41,7 @@ type Day struct {
 }
 
 func init() {
-	common.Init(true, "1.0.27", "", "2017", "tracks your working times", "mpetavy", fmt.Sprintf("https://github.com/mpetavy/%s", common.Title()), common.APACHE, nil, nil, tick, time.Duration(60)*time.Second)
+	common.Init(true, "1.0.27", "", "2017", "tracks your working times", "mpetavy", fmt.Sprintf("https://github.com/mpetavy/%s", common.Title()), common.APACHE, nil, nil, run, time.Duration(60)*time.Second)
 
 	minutes = flag.Bool("m", false, "show durations in minutes")
 
@@ -447,7 +447,7 @@ func sorted(m map[string]int) []string {
 	return s
 }
 
-func tick() error {
+func run() error {
 	var start time.Time
 	var end time.Time
 	var lines []Day
