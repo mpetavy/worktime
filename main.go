@@ -27,9 +27,11 @@ var (
 	filename *string
 	minutes  *bool
 	export   *string
+	limit    *string
 
 	listFeiertage []feiertage.Feiertag
 	yearFeiertage int
+	limitDate     time.Time
 )
 
 type Day struct {
@@ -46,7 +48,7 @@ func init() {
 	fn := ""
 
 	usr, err := user.Current()
-	if err != nil {
+	if common.Error(err) {
 		panic(err)
 	}
 
@@ -56,10 +58,18 @@ func init() {
 
 	filename = flag.String("f", fn, "filename for worktime.csv")
 	export = flag.String("e", "", "filename for export worktime.csv")
+	limit = flag.String("l", "", "date until summary should be processed")
 
 	common.Events.NewFuncReceiver(common.EventFlagsParsed{}, func(event common.Event) {
 		if !common.IsRunningAsService() {
 			common.App().RunTime = 0
+
+			if *limit != "" {
+				limitDate, err = common.ParseDateTime(common.DateMask, *limit)
+				if common.Error(err) {
+					panic(err)
+				}
+			}
 		}
 	})
 }
@@ -76,7 +86,7 @@ func findDay(lines *[]Day, date time.Time) (*Day, bool) {
 
 func readWorktimes(filename string, start *time.Time, end *time.Time, lines *[]Day) error {
 	file, err := os.Open(filename)
-	if err != nil {
+	if common.Error(err) {
 		return err
 	}
 
@@ -97,7 +107,7 @@ func readWorktimes(filename string, start *time.Time, end *time.Time, lines *[]D
 			err = nil
 			break
 		}
-		if err != nil {
+		if common.Error(err) {
 			return err
 		}
 
@@ -109,8 +119,12 @@ func readWorktimes(filename string, start *time.Time, end *time.Time, lines *[]D
 		}
 
 		date, err := common.ParseDateTime(mask, txt)
-		if err != nil {
+		if common.Error(err) {
 			return err
+		}
+
+		if !limitDate.IsZero() && common.CompareDate(date, limitDate) == 0 {
+			break
 		}
 
 		if common.CompareDate(date, time.Now()) == 0 {
@@ -198,13 +212,13 @@ func writeWorktimes(filename string, lines *[]Day) error {
 		if !b {
 			err := os.MkdirAll(dir, common.DefaultDirMode)
 
-			if err != nil {
+			if common.Error(err) {
 				return err
 			}
 		}
 
 		fileWorktime, err = os.Create(filename)
-		if err != nil {
+		if common.Error(err) {
 			return err
 		}
 		defer func() {
@@ -214,7 +228,7 @@ func writeWorktimes(filename string, lines *[]Day) error {
 
 	if len(*export) > 0 {
 		fileExport, err = os.Create(*export)
-		if err != nil {
+		if common.Error(err) {
 			return err
 		}
 
@@ -240,6 +254,11 @@ func writeWorktimes(filename string, lines *[]Day) error {
 
 	start := (*lines)[0].start
 	end := time.Now()
+
+	if !limitDate.IsZero() {
+		end = limitDate
+	}
+
 	completeWeek := false
 
 	start = common.ClearTime(start)
@@ -250,7 +269,7 @@ func writeWorktimes(filename string, lines *[]Day) error {
 	for loopDay := start; end.Sub(loopDay) >= 0; {
 
 		// d, err := time.Parse(common.DateMask, "25.10.2017")
-		// if err != nil {
+		// if common.Error(err) {
 		// 	return err
 		// }
 
@@ -396,19 +415,19 @@ func writeWorktimes(filename string, lines *[]Day) error {
 		fmt.Printf("Sum overtime 10h limit  : %v\n", formatDuration(sumOvertime10h))
 
 		if fileExport != nil {
-			_, err := fmt.Fprint(fileWorktime, "\n")
+			_, err := fmt.Fprintf(fileExport, "\n")
 			common.Error(err)
-			_, err = fmt.Fprint(fileWorktime, "Count worktime days     : %v\n", sumWorkDays)
+			_, err = fmt.Fprintf(fileExport, "Count worktime days     : %v\n", sumWorkDays)
 			common.Error(err)
-			_, err = fmt.Fprint(fileWorktime, "Count non worktime days : %v\n", sumNonWorkDays)
+			_, err = fmt.Fprintf(fileExport, "Count non worktime days : %v\n", sumNonWorkDays)
 			common.Error(err)
-			_, err = fmt.Fprint(fileWorktime, "Average worktime        : %v\n", formatDuration(averageWorktime))
+			_, err = fmt.Fprintf(fileExport, "Average worktime        : %v\n", formatDuration(averageWorktime))
 			common.Error(err)
-			_, err = fmt.Fprint(fileWorktime, "Sum worktime            : %v\n", formatDuration(sumWorktime))
+			_, err = fmt.Fprintf(fileExport, "Sum worktime            : %v\n", formatDuration(sumWorktime))
 			common.Error(err)
-			_, err = fmt.Fprint(fileWorktime, "Sum overtime            : %v\n", formatDuration(sumOvertime))
+			_, err = fmt.Fprintf(fileExport, "Sum overtime            : %v\n", formatDuration(sumOvertime))
 			common.Error(err)
-			_, err = fmt.Fprint(fileWorktime, "Sum overtime 10h limit  : %v\n", formatDuration(sumOvertime10h))
+			_, err = fmt.Fprintf(fileExport, "Sum overtime 10h limit  : %v\n", formatDuration(sumOvertime10h))
 			common.Error(err)
 		}
 	}
@@ -434,7 +453,7 @@ func tick() error {
 	var lines []Day
 
 	b, err := common.FileExists(*filename)
-	if err != nil {
+	if common.Error(err) {
 		return err
 	}
 
@@ -445,19 +464,19 @@ func tick() error {
 			backupFilename := filepath.Dir(*filename) + string(filepath.Separator) + common.FileNamePart(*filename) + "-" + yesterday.Format(common.DateMaskFilename) + common.FileNameExt(*filename)
 
 			b, err := common.FileExists(backupFilename)
-			if err != nil {
+			if common.Error(err) {
 				return err
 			}
 			if !b {
 				err := common.FileCopy(*filename, backupFilename)
-				if err != nil {
+				if common.Error(err) {
 					return err
 				}
 			}
 		}
 
 		err = readWorktimes(*filename, &start, &end, &lines)
-		if err != nil {
+		if common.Error(err) {
 			return err
 		}
 	}
@@ -468,8 +487,10 @@ func tick() error {
 
 	end = time.Now()
 
-	if _, found := findDay(&lines, time.Now()); !found {
-		lines = append(lines, Day{start, end, ""})
+	if limitDate.IsZero() {
+		if _, found := findDay(&lines, time.Now()); !found {
+			lines = append(lines, Day{start, end, ""})
+		}
 	}
 
 	return writeWorktimes(*filename, &lines)
