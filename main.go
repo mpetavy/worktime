@@ -208,8 +208,7 @@ func writeWorktimes(filename string, lines *[]Day) error {
 	if common.IsRunningAsService() {
 		dir := filepath.Dir(filename)
 
-		b, err := common.FileExists(dir)
-		if !b {
+		if !common.FileExists(dir) {
 			err := os.MkdirAll(dir, common.DefaultDirMode)
 
 			if common.Error(err) {
@@ -452,22 +451,13 @@ func run() error {
 	var end time.Time
 	var lines []Day
 
-	b, err := common.FileExists(*filename)
-	if common.Error(err) {
-		return err
-	}
-
-	if b {
+	if common.FileExists(*filename) {
 		if common.IsRunningAsService() {
 			yesterday := time.Now().Add(-time.Hour * 24)
 
 			backupFilename := filepath.Dir(*filename) + string(filepath.Separator) + common.FileNamePart(*filename) + "-" + yesterday.Format(common.DateMaskFilename) + common.FileNameExt(*filename)
 
-			b, err := common.FileExists(backupFilename)
-			if common.Error(err) {
-				return err
-			}
-			if !b {
+			if !common.FileExists(backupFilename) {
 				err := common.FileCopy(*filename, backupFilename)
 				if common.Error(err) {
 					return err
@@ -475,7 +465,7 @@ func run() error {
 			}
 		}
 
-		err = readWorktimes(*filename, &start, &end, &lines)
+		err := readWorktimes(*filename, &start, &end, &lines)
 		if common.Error(err) {
 			return err
 		}
