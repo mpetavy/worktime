@@ -3,7 +3,7 @@ module github.com/mpetavy/worktime
 go 1.16
 
 require (
-	github.com/mpetavy/common v1.1.102
+	github.com/mpetavy/common v1.1.103
 	github.com/wlbr/feiertage v1.7.2
 )
 
