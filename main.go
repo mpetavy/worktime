@@ -243,7 +243,6 @@ func writeWorktimes(filename string, lines *[]Day) error {
 
 	var sumWorktime time.Duration
 	var sumOvertime time.Duration
-	var sumOvertime10h time.Duration
 	var sumWorkDays int64
 	var sumNonWorkDays int64
 	var sumOfWeek time.Duration
@@ -292,7 +291,6 @@ func writeWorktimes(filename string, lines *[]Day) error {
 
 		worktime := time.Duration(0)
 		overtime := time.Duration(0)
-		overtime10h := time.Duration(0)
 
 		if isWeekend || isFeiertag || isGleittag || isCommented {
 			day.start = common.TruncateTime(loopDay, common.Day)
@@ -300,21 +298,25 @@ func writeWorktimes(filename string, lines *[]Day) error {
 
 			if isGleittag {
 				overtime = -time.Duration(8) * time.Hour
-				overtime10h = -time.Duration(8) * time.Hour
 			}
 
 			sumNonWorkDays++
 		} else {
 			worktime = day.end.Sub(day.start)
+
+			// lunch time
 			if worktime > time.Duration(6)*time.Hour {
 				worktime -= time.Duration(30) * time.Minute
 			}
 
-			overtime = worktime - time.Duration(8)*time.Hour
-			if worktime > time.Hour*10 {
-				overtime10h = time.Hour * 2
+			// overtime
+			if worktime > time.Duration(8)*time.Hour {
+				overtime = worktime - time.Duration(8)*time.Hour
+				if overtime > time.Duration(2)*time.Hour {
+					overtime = time.Duration(2) * time.Hour
+				}
 			} else {
-				overtime10h = worktime - time.Duration(8)*time.Hour
+				overtime -= time.Duration(8)*time.Hour - worktime
 			}
 
 			sumWorkDays++
@@ -322,7 +324,6 @@ func writeWorktimes(filename string, lines *[]Day) error {
 
 		sumWorktime += worktime
 		sumOvertime += overtime
-		sumOvertime10h += overtime10h
 
 		worktimeString := formatDuration(worktime)
 		overtimeString := formatDuration(overtime)
@@ -396,7 +397,6 @@ func writeWorktimes(filename string, lines *[]Day) error {
 		if sumWorkDays < 2 {
 			averageWorktime = 0
 			sumOvertime = 0
-			sumOvertime10h = 0
 		}
 
 		fmt.Println()
@@ -411,7 +411,6 @@ func writeWorktimes(filename string, lines *[]Day) error {
 		fmt.Printf("Average worktime        : %v\n", formatDuration(averageWorktime))
 		fmt.Printf("Sum worktime            : %v\n", formatDuration(sumWorktime))
 		fmt.Printf("Sum overtime            : %v\n", formatDuration(sumOvertime))
-		fmt.Printf("Sum overtime 10h limit  : %v\n", formatDuration(sumOvertime10h))
 
 		if fileExport != nil {
 			_, err := fmt.Fprintf(fileExport, "\n")
@@ -425,8 +424,6 @@ func writeWorktimes(filename string, lines *[]Day) error {
 			_, err = fmt.Fprintf(fileExport, "Sum worktime            : %v\n", formatDuration(sumWorktime))
 			common.Error(err)
 			_, err = fmt.Fprintf(fileExport, "Sum overtime            : %v\n", formatDuration(sumOvertime))
-			common.Error(err)
-			_, err = fmt.Fprintf(fileExport, "Sum overtime 10h limit  : %v\n", formatDuration(sumOvertime10h))
 			common.Error(err)
 		}
 	}
