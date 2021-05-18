@@ -21,6 +21,7 @@ const mask = common.Day + common.DateSeparator + common.Month + common.DateSepar
 
 const (
 	Gleittag = "#Gleittag"
+	Urlaub   = "#Urlaub"
 )
 
 var (
@@ -263,6 +264,7 @@ func writeWorktimes(filename string, lines *[]Day) error {
 	end = common.ClearTime(end)
 
 	c := 0
+	months := 0
 
 	for loopDay := start; end.Sub(loopDay) >= 0; {
 
@@ -280,6 +282,10 @@ func writeWorktimes(filename string, lines *[]Day) error {
 		if !found {
 			day.start = common.TruncateTime(loopDay, common.Day)
 			day.end = common.TruncateTime(loopDay, common.Day)
+		}
+
+		if day.start.Day() == 1 {
+			months++
 		}
 
 		comment := getFeiertag(loopDay)
@@ -401,8 +407,13 @@ func writeWorktimes(filename string, lines *[]Day) error {
 
 		fmt.Println()
 
-		for _, k := range sorted(commentDay) {
-			fmt.Printf("%-23s : %v\n", k, commentDay[k])
+		sumUrlaub := 0
+		for _, key := range sorted(commentDay) {
+			days := commentDay[key]
+			fmt.Printf("%-23s : %v\n", key, days)
+			if strings.Contains(key, Urlaub) {
+				sumUrlaub += days
+			}
 		}
 
 		fmt.Println()
@@ -411,6 +422,8 @@ func writeWorktimes(filename string, lines *[]Day) error {
 		fmt.Printf("Average worktime        : %v\n", formatDuration(averageWorktime))
 		fmt.Printf("Sum worktime            : %v\n", formatDuration(sumWorktime))
 		fmt.Printf("Sum overtime            : %v\n", formatDuration(sumOvertime))
+		fmt.Printf("Sum vacation            : %v\n", sumUrlaub)
+		fmt.Printf("Sum vacation left       : %v\n", int(float64(months)*2.5)-sumUrlaub)
 
 		if fileExport != nil {
 			_, err := fmt.Fprintf(fileExport, "\n")
