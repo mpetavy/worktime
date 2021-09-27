@@ -284,7 +284,7 @@ func writeWorktimes(filename string, lines *[]Day) error {
 			day.end = common.TruncateTime(loopDay, common.Day)
 		} else {
 			if day.start.Hour() == 8 && day.start.Minute() == 0 && day.end.Hour() == 0 && day.end.Minute() == 0 {
-				day.end.Add(time.Hour * 17)
+				day.end = day.end.Add(time.Hour * 17)
 			}
 		}
 
