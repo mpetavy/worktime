@@ -282,10 +282,6 @@ func writeWorktimes(filename string, lines *[]Day) error {
 		if !found {
 			day.start = common.TruncateTime(loopDay, common.Day)
 			day.end = common.TruncateTime(loopDay, common.Day)
-		} else {
-			if day.start.Hour() == 8 && day.start.Minute() == 0 && day.end.Hour() == 0 && day.end.Minute() == 0 {
-				day.end = day.end.Add(time.Hour * 17)
-			}
 		}
 
 		if day.start.Day() == 1 {
@@ -332,19 +328,26 @@ func writeWorktimes(filename string, lines *[]Day) error {
 			sumWorkDays++
 		}
 
-		sumWorktime += worktime
-		sumOvertime += overtime
-
-		worktimeString := formatDuration(worktime)
-		overtimeString := formatDuration(overtime)
-
 		if len(comment) == 0 && isCommented {
 			comment = day.comment
 		}
 
 		if len(comment) == 0 && !isFeiertag && !isWeekend && !isCommented && worktime == 0 {
 			comment = "?"
+
+			if day.start.Hour() == 0 && day.start.Minute() == 0 && day.end.Hour() == 0 && day.end.Minute() == 0 {
+				day.start = time.Date(day.start.Year(), day.start.Month(), day.start.Day(), 8, 0, 0, day.start.Nanosecond(), day.start.Location())
+				day.end = time.Date(day.start.Year(), day.start.Month(), day.start.Day(), 17, 0, 0, day.start.Nanosecond(), day.start.Location())
+
+				worktime = time.Duration(8 * time.Hour)
+			}
 		}
+
+		sumWorktime += worktime
+		sumOvertime += overtime
+
+		worktimeString := formatDuration(worktime)
+		overtimeString := formatDuration(overtime)
 
 		if day.start.Weekday() == time.Monday {
 			completeWeek = true
