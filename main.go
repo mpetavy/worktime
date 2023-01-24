@@ -54,7 +54,7 @@ func init() {
 	}
 
 	if common.IsRunningInteractive() {
-		fn = fmt.Sprintf("%s%s%s", fmt.Sprintf("%s%s%s%s%s", usr.HomeDir, string(os.PathSeparator), "Documents", string(os.PathSeparator), "worktime"), string(os.PathSeparator), "worktime.csv")
+		fn = filepath.Join(usr.HomeDir, string(os.PathSeparator), "Documents", string(os.PathSeparator), "worktime", string(os.PathSeparator), "worktime.csv")
 	}
 
 	filename = flag.String("f", fn, "filename for worktime.csv")
@@ -322,7 +322,7 @@ func writeWorktimes(filename string, lines *[]Day) error {
 					overtime = time.Duration(2) * time.Hour
 				}
 			} else {
-				overtime -= time.Duration(8)*time.Hour - worktime
+				overtime += worktime - time.Duration(8)*time.Hour
 			}
 
 			sumWorkDays++
@@ -515,5 +515,9 @@ func run() error {
 func main() {
 	defer common.Done()
 
-	common.Run([]string{"f"})
+	if common.IsRunningInteractive() {
+		common.Run(nil)
+	} else {
+		common.Run([]string{"f"})
+	}
 }
