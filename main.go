@@ -25,10 +25,11 @@ const (
 )
 
 var (
-	filename *string
-	minutes  *bool
-	export   *string
-	limit    *string
+	filename         *string
+	minutes          *bool
+	vacationPerMonth *float64
+	export           *string
+	limit            *string
 
 	listFeiertage []feiertage.Feiertag
 	yearFeiertage int
@@ -45,6 +46,7 @@ func init() {
 	common.Init(true, "1.0.27", "", "", "2017", "tracks your working times", "mpetavy", fmt.Sprintf("https://github.com/mpetavy/%s", common.Title()), common.APACHE, nil, nil, nil, run, time.Duration(60)*time.Second)
 
 	minutes = flag.Bool("m", false, "show durations in minutes")
+	vacationPerMonth = flag.Float64("v", 2.5, "vacation per month")
 
 	fn := ""
 
@@ -306,6 +308,15 @@ func writeWorktimes(filename string, lines *[]Day) error {
 				overtime = -time.Duration(8) * time.Hour
 			}
 
+			if isWeekend {
+				switch loopDay.Weekday() {
+				case time.Saturday:
+					day.comment = "#Saturday"
+				case time.Sunday:
+					day.comment = "#Sunday"
+				}
+			}
+
 			sumNonWorkDays++
 		} else {
 			worktime = day.end.Sub(day.start)
@@ -430,7 +441,7 @@ func writeWorktimes(filename string, lines *[]Day) error {
 		fmt.Printf("Sum worktime            : %v\n", formatDuration(sumWorktime))
 		fmt.Printf("Sum overtime            : %v\n", formatDuration(sumOvertime))
 		fmt.Printf("Sum vacation            : %v\n", sumUrlaub)
-		fmt.Printf("Sum vacation left       : %v\n", int(float64(months)*2.5)-sumUrlaub)
+		fmt.Printf("Sum vacation left       : %v\n", int(float64(months)**vacationPerMonth)-sumUrlaub)
 
 		if fileExport != nil {
 			_, err := fmt.Fprintf(fileExport, "\n")
