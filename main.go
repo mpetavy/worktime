@@ -46,7 +46,7 @@ func init() {
 	common.Init(true, "1.0.27", "", "", "2017", "tracks your working times", "mpetavy", fmt.Sprintf("https://github.com/mpetavy/%s", common.Title()), common.APACHE, nil, nil, nil, run, time.Duration(60)*time.Second)
 
 	minutes = flag.Bool("m", false, "show durations in minutes")
-	vacationPerMonth = flag.Float64("v", 2.5, "vacation per month")
+	vacationPerMonth = flag.Float64("v", 2.916, "vacation per month")
 
 	fn := ""
 
@@ -267,6 +267,7 @@ func writeWorktimes(filename string, lines *[]Day) error {
 
 	c := 0
 	months := 0
+	sumVacation := 0
 
 	for loopDay := start; end.Sub(loopDay) >= 0; {
 
@@ -290,12 +291,20 @@ func writeWorktimes(filename string, lines *[]Day) error {
 			months++
 		}
 
-		comment := getFeiertag(loopDay)
+		feiertag := getFeiertag(loopDay)
 
-		isFeiertag := len(comment) > 0
+		isFeiertag := len(feiertag) > 0
 		isWeekend := loopDay.Weekday() == time.Saturday || loopDay.Weekday() == time.Sunday
 		isCommented := len(day.comment) > 0
-		isGleittag := isCommented && day.comment == Gleittag
+		isGleittag := day.comment == Gleittag
+
+		if day.start.Day() == 1 && day.start.Month() == 4 {
+			sumVacation = 0
+		}
+
+		if day.comment == Urlaub {
+			sumVacation++
+		}
 
 		worktime := time.Duration(0)
 		overtime := time.Duration(0)
@@ -339,12 +348,8 @@ func writeWorktimes(filename string, lines *[]Day) error {
 			sumWorkDays++
 		}
 
-		if len(comment) == 0 && isCommented {
-			comment = day.comment
-		}
-
-		if len(comment) == 0 && !isFeiertag && !isWeekend && !isCommented && worktime == 0 {
-			comment = "?"
+		if len(day.comment) == 0 && !isFeiertag && !isWeekend && !isCommented && worktime == 0 {
+			day.comment = "?"
 
 			if day.start.Hour() == 0 && day.start.Minute() == 0 && day.end.Hour() == 0 && day.end.Minute() == 0 {
 				day.start = time.Date(day.start.Year(), day.start.Month(), day.start.Day(), 8, 0, 0, day.start.Nanosecond(), day.start.Location())
@@ -377,8 +382,8 @@ func writeWorktimes(filename string, lines *[]Day) error {
 			sumOfWeekString = ""
 		}
 
-		if strings.HasPrefix(comment, "#") {
-			s := strconv.Itoa(loopDay.Year()) + " " + comment
+		if strings.HasPrefix(feiertag, "#") {
+			s := strconv.Itoa(loopDay.Year()) + " " + feiertag
 
 			v, ok := commentDay[s]
 			if ok {
@@ -390,7 +395,7 @@ func writeWorktimes(filename string, lines *[]Day) error {
 			commentDay[s] = v
 		}
 
-		line0 := fmt.Sprintf("%s\n", strings.Join([]string{day.start.Format(string(mask)), "", "", comment, ""}, ";"))
+		line0 := fmt.Sprintf("%s\n", strings.Join([]string{day.start.Format(string(mask)), "", "", day.comment, ""}, ";"))
 		line1 := fmt.Sprintf("%s\n", strings.Join([]string{day.end.Format(string(mask)), worktimeString, sumOfWeekString, "", overtimeString, formatDuration(sumOvertime)}, ";"))
 
 		if common.IsRunningAsService() {
@@ -425,23 +430,14 @@ func writeWorktimes(filename string, lines *[]Day) error {
 
 		fmt.Println()
 
-		sumUrlaub := 0
-		for _, key := range sorted(commentDay) {
-			days := commentDay[key]
-			fmt.Printf("%-23s : %v\n", key, days)
-			if strings.Contains(key, Urlaub) {
-				sumUrlaub += days
-			}
-		}
-
 		fmt.Println()
 		fmt.Printf("Count worktime days     : %v\n", sumWorkDays)
 		fmt.Printf("Count non worktime days : %v\n", sumNonWorkDays)
 		fmt.Printf("Average worktime        : %v\n", formatDuration(averageWorktime))
 		fmt.Printf("Sum worktime            : %v\n", formatDuration(sumWorktime))
 		fmt.Printf("Sum overtime            : %v\n", formatDuration(sumOvertime))
-		fmt.Printf("Sum vacation            : %v\n", sumUrlaub)
-		fmt.Printf("Sum vacation left       : %v\n", int(float64(months)**vacationPerMonth)-sumUrlaub)
+		fmt.Printf("Sum vacation            : %v\n", sumVacation)
+		fmt.Printf("Sum vacation left       : %v\n", int(float64(months)**vacationPerMonth)-sumVacation)
 
 		if fileExport != nil {
 			_, err := fmt.Fprintf(fileExport, "\n")
