@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -43,7 +42,7 @@ type Day struct {
 }
 
 func init() {
-	common.Init(true, "1.0.27", "", "", "2017", "tracks your working times", "mpetavy", fmt.Sprintf("https://github.com/mpetavy/%s", common.Title()), common.APACHE, nil, nil, nil, run, time.Duration(60)*time.Second)
+	common.Init("1.0.27", "", "", "2017", "tracks your working times", "mpetavy", fmt.Sprintf("https://github.com/mpetavy/%s", common.Title()), common.APACHE, nil, nil, nil, run, time.Minute)
 
 	minutes = flag.Bool("m", false, "show durations in minutes")
 	vacationPerMonth = flag.Float64("v", 2.916, "vacation per month")
@@ -64,14 +63,10 @@ func init() {
 	limit = flag.String("l", "", "date until summary should be processed")
 
 	common.Events.NewFuncReceiver(common.EventFlagsParsed{}, func(event common.Event) {
-		if !common.IsRunningAsService() {
-			common.App().RunTime = 0
-
-			if *limit != "" {
-				limitDate, err = common.ParseDateTime(common.DateMask, *limit)
-				if common.Error(err) {
-					panic(err)
-				}
+		if *limit != "" {
+			limitDate, err = common.ParseDateTime(common.DateMask, *limit)
+			if common.Error(err) {
+				panic(err)
 			}
 		}
 	})
@@ -458,18 +453,6 @@ func writeWorktimes(filename string, lines *[]Day) error {
 	return err
 }
 
-func sorted(m map[string]int) []string {
-	var s []string
-
-	for k := range m {
-		s = append(s, k)
-	}
-
-	sort.Strings(s)
-
-	return s
-}
-
 func run() error {
 	var start time.Time
 	var end time.Time
@@ -507,7 +490,7 @@ func run() error {
 		}
 	}
 
-	return writeWorktimes(*filename, &lines)
+	return common.ExitOrError(writeWorktimes(*filename, &lines))
 }
 
 //func debugLines(lines *[]Day) {
