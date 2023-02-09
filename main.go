@@ -462,7 +462,7 @@ func run() error {
 		if common.IsRunningAsService() {
 			yesterday := time.Now().Add(-time.Hour * 24)
 
-			backupFilename := filepath.Dir(*filename) + string(filepath.Separator) + common.FileNamePart(*filename) + "-" + yesterday.Format(common.DateMaskFilename) + common.FileNameExt(*filename)
+			backupFilename := filepath.Dir(*filename) + string(filepath.Separator) + common.FileNamePart(*filename) + "-" + yesterday.Format(common.SortedDateMask) + common.FileNameExt(*filename)
 
 			if !common.FileExists(backupFilename) {
 				err := common.FileCopy(*filename, backupFilename)
