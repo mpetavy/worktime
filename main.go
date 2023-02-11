@@ -503,8 +503,6 @@ func run() error {
 //}
 
 func main() {
-	defer common.Done()
-
 	if common.IsRunningInteractive() {
 		common.Run(nil)
 	} else {
