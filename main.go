@@ -62,7 +62,7 @@ func init() {
 	export = flag.String("e", "", "filename for export worktime.csv")
 	limit = flag.String("l", "", "date until summary should be processed")
 
-	common.Events.NewFuncReceiver(common.EventFlagsParsed{}, func(event common.Event) {
+	common.Events.AddListener(common.EventFlagsParsed{}, func(event common.Event) {
 		if *limit != "" {
 			limitDate, err = common.ParseDateTime(common.DateMask, *limit)
 			if common.Error(err) {
