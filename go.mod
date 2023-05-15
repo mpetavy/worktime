@@ -1,9 +1,9 @@
 module github.com/mpetavy/worktime
 
-go 1.19
+go 1.20
 
 require (
-	github.com/mpetavy/common v1.6.1
+	github.com/mpetavy/common v1.6.2
 	github.com/wlbr/feiertage v1.10.0
 )
 

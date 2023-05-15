@@ -42,7 +42,7 @@ type Day struct {
 }
 
 func init() {
-	common.Init("worktime", "1.0.27", "", "", "2017", "tracks your working times", "mpetavy", fmt.Sprintf("https://github.com/mpetavy/%s", common.Title()), common.APACHE, nil, nil, nil, run, time.Minute)
+	common.Init("worktime", "", "", "", "2017", "tracks your working times", "mpetavy", fmt.Sprintf("https://github.com/mpetavy/%s", common.Title()), common.APACHE, nil, nil, nil, run, time.Minute)
 
 	minutes = flag.Bool("m", false, "show durations in minutes")
 	vacationPerMonth = flag.Float64("v", 2.916, "vacation per month")
