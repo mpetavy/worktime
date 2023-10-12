@@ -460,7 +460,7 @@ func run() error {
 
 	if common.FileExists(*filename) {
 		if common.IsRunningAsService() {
-			yesterday := time.Now().Add(-time.Hour * 24)
+			yesterday := common.CalcDeadline(time.Now(), -time.Hour*24)
 
 			backupFilename := filepath.Dir(*filename) + string(filepath.Separator) + common.FileNamePart(*filename) + "-" + yesterday.Format(common.SortedDateMask) + common.FileNameExt(*filename)
 
