@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.1
 
 require (
-	github.com/mpetavy/common v1.6.21
+	github.com/mpetavy/common v1.6.22
 	github.com/wlbr/feiertage v1.10.0
 )
 
