@@ -180,11 +180,24 @@ func createFeiertage(year int) {
 	}
 }
 
+type asDateTime interface {
+	Year() int
+	Month() time.Month
+	Day() int
+	Hour() int
+	Minute() int
+	Second() int
+}
+
+func toTime(v asDateTime) time.Time {
+	return time.Date(v.Year(), v.Month(), v.Day(), 0, 0, 0, 0, time.Local)
+}
+
 func getFeiertag(tag time.Time) string {
 	createFeiertage(tag.Year())
 
 	for _, e := range listFeiertage {
-		day := common.ToTime(e)
+		day := toTime(e)
 
 		if common.CompareDate(day, tag) == 0 {
 			return e.Text
