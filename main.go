@@ -49,7 +49,7 @@ func init() {
 	common.Init("", "", "", "", "tracks your working times", "", "", "", &resources, nil, nil, run, time.Minute)
 
 	minutes = flag.Bool("m", false, "show durations in minutes")
-	vacationPerMonth = flag.Float64("v", 2.916, "vacation per month")
+	vacationPerMonth = flag.Float64("vacation", 2.916, "vacation per month")
 
 	fn := ""
 
